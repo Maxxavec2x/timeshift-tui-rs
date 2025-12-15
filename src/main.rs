@@ -17,11 +17,13 @@ pub struct App {
     //Default permet de set les nombres à 0 et les booléens à false
     exit: bool,
     timeshift_instance: Timeshift,
+    current_snapshot_index: usize, //représente la snapshot selectionnée
+    current_device: String,        // Représente le device selectionné
 }
 impl App {
     /// runs the application's main loop until the user quits
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        self.timeshift_instance.init_current_snapshot();
+        self.current_snapshot_index = 0;
         while !self.exit {
             terminal.draw(|frame| self.draw_frame(frame))?;
             self.handle_events()?;
@@ -60,15 +62,13 @@ impl App {
         }
     }
     fn select_next(&mut self) {
-        if self.timeshift_instance.current_snapshot_index
-            < self.timeshift_instance.snapshots.len() - 1
-        {
-            self.timeshift_instance.current_snapshot_index += 1;
+        if self.current_snapshot_index < self.timeshift_instance.snapshots.len() - 1 {
+            self.current_snapshot_index += 1;
         }
     }
     fn select_previous(&mut self) {
-        if self.timeshift_instance.current_snapshot_index > 0 {
-            self.timeshift_instance.current_snapshot_index -= 1;
+        if self.current_snapshot_index > 0 {
+            self.current_snapshot_index -= 1;
         }
     }
     fn select_first(&mut self) {
@@ -85,7 +85,7 @@ impl App {
             .iter()
             .enumerate()
             .map(|(i, s)| {
-                if i == self.timeshift_instance.current_snapshot_index {
+                if i == self.current_snapshot_index {
                     ListItem::from(s.to_string()).bg(Color::Blue)
                 } else {
                     ListItem::from(s.to_string())

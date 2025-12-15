@@ -53,12 +53,6 @@ impl Timeshift {
         }
     }
 
-    pub fn init_current_snapshot(&mut self) {
-        if !self.snapshots.is_empty() {
-            self.current_snapshot_index = 0;
-        }
-    }
-
     pub fn get_current_snapshot(&self) -> Snapshot {
         self.snapshots[self.current_snapshot_index].clone()
         // It would be better  to use a reference to the currnt
