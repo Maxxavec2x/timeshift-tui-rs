@@ -72,12 +72,36 @@ impl App {
         }
     }
     fn select_first(&mut self) {
-        todo!();
+        self.current_snapshot_index = 0;
     }
     fn select_last(&mut self) {
-        todo!();
+        self.current_snapshot_index = self.timeshift_instance.snapshots.len() - 1;
     }
+
     fn render_snapshots(&self, area: Rect, buf: &mut Buffer) {
+        // Conversion en string pour le rendering
+        let items: Vec<ListItem> = self
+            .timeshift_instance
+            .snapshots
+            .iter()
+            .enumerate()
+            .map(|(i, s)| {
+                if i == self.current_snapshot_index {
+                    ListItem::from(s.to_string()).bg(Color::Blue)
+                } else {
+                    ListItem::from(s.to_string())
+                }
+            })
+            .collect();
+        let snapshot_list_widget = List::new(items)
+            .block(Block::bordered().title("Snapshot List"))
+            .highlight_style(Style::new().reversed())
+            .highlight_symbol(">>")
+            .repeat_highlight_symbol(true);
+        snapshot_list_widget.render(area, buf);
+    }
+
+    fn render_devices(&self, area: Rect, buf: &mut Buffer) {
         // Conversion en string pour le rendering
         let items: Vec<ListItem> = self
             .timeshift_instance
