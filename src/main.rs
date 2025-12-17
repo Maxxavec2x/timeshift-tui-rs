@@ -63,7 +63,7 @@ impl App {
             return;
         }
         match key_event.code {
-            KeyCode::Char('q') => self.exit = true,
+            KeyCode::Char('q') => self.back_or_exit(),
             KeyCode::Esc => self.exit = true,
             KeyCode::Char('j') | KeyCode::Down => self.select_next(),
             KeyCode::Char('k') | KeyCode::Up => self.select_previous(),
@@ -71,6 +71,15 @@ impl App {
             KeyCode::Char('G') | KeyCode::End => self.select_last(),
             KeyCode::Enter => self.choose(),
             _ => {}
+        }
+    }
+
+    fn back_or_exit(&mut self) {
+        if self.current_display_screen == "Device" {
+            self.exit = true;
+        } else {
+            self.current_display_screen = "Device".to_string();
+            self.current_index = 0; // Reset pour les snapshots
         }
     }
 
@@ -120,6 +129,14 @@ impl App {
     }
 
     fn render_snapshots(&self, area: Rect, buf: &mut Buffer, current_device_name: String) {
+        let instructions = Line::from(vec![
+            " Delete ".into(),
+            " <D> ".blue().bold(),
+            " Create ".into(),
+            " <C> ".blue().bold(),
+            " Back ".into(),
+            " <Q> ".blue().bold(),
+        ]);
         // Conversion en string pour le rendering
         let items: Vec<ListItem> = self.timeshift_instance.devices_map_by_name
             [&current_device_name]
@@ -134,7 +151,11 @@ impl App {
             })
             .collect();
         let snapshot_list_widget = List::new(items)
-            .block(Block::bordered().title("Snapshot List"))
+            .block(
+                Block::bordered()
+                    .title("Snapshot List")
+                    .title_bottom(instructions.centered()),
+            )
             .highlight_style(Style::new().reversed())
             .highlight_symbol(">>")
             .repeat_highlight_symbol(true);
@@ -142,6 +163,12 @@ impl App {
     }
 
     fn render_devices(&self, area: Rect, buf: &mut Buffer) {
+        let instructions = Line::from(vec![
+            " Choose a device ".into(),
+            " <Enter> ".blue().bold(),
+            " Quit ".into(),
+            " <Q> ".blue().bold(),
+        ]);
         // Conversion en string pour le rendering
         let items: Vec<ListItem> = self
             .timeshift_instance
@@ -158,7 +185,11 @@ impl App {
             })
             .collect();
         let snapshot_list_widget = List::new(items)
-            .block(Block::bordered().title("Device List"))
+            .block(
+                Block::bordered()
+                    .title("Device List")
+                    .title_bottom(instructions.centered()),
+            )
             .highlight_style(Style::new().reversed())
             .highlight_symbol(">>")
             .repeat_highlight_symbol(true);
@@ -169,17 +200,8 @@ impl App {
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" Timeshift TUI ".bold());
-        let instructions = Line::from(vec![
-            " Delete ".into(),
-            " <D> ".blue().bold(),
-            " Create ".into(),
-            " <C> ".blue().bold(),
-            " Quit ".into(),
-            " <Q> ".blue().bold(),
-        ]);
         let block = Block::bordered()
             .title(title.centered())
-            .title_bottom(instructions.centered())
             .border_set(border::THICK);
         //Paragraph::new().block(block).render(area, buf);
         //self.render_snapshots(area, buf, self.current_device_name.clone());
