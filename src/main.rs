@@ -84,7 +84,7 @@ impl App {
             KeyCode::Char('G') | KeyCode::End => self.select_last(),
             KeyCode::Char('d') | KeyCode::Delete => self.show_delete_confirmation = true,
             KeyCode::Char('y') | KeyCode::Char('Y') => {
-                self.delete_current_snapshot().unwrap();
+                self.delete_current_snapshot();
                 self.show_delete_confirmation = false;
             }
             KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
@@ -95,17 +95,12 @@ impl App {
         }
     }
 
-    fn delete_current_snapshot(&mut self) -> Result<(), TimeshiftError> {
+    fn delete_current_snapshot(&mut self) {
         if self.current_display_screen == "Snapshot" {
             let snapshot_to_delete = &self.timeshift_instance.devices_map_by_name
                 [&self.current_device_name.clone()][self.current_index];
-            match Timeshift::delete_snapshot(&snapshot_to_delete.name) {
-                Ok(_) => Ok::<(), ()>(()), //wtf is this, rust compiler told me to do it its not me
-                //i swear
-                Err(_) => return Err(TimeshiftError::DeleteError),
-            };
+            Timeshift::delete_snapshot(&snapshot_to_delete.name).expect("Erreur deleting snapshot");
         }
-        Ok(())
     }
 
     fn back_or_exit(&mut self) {
