@@ -11,7 +11,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget, Wrap},
 };
 use std::io;
-use timeshift_lib::{Timeshift, TimeshiftError};
+use timeshift_lib::Timeshift;
 
 #[derive(Debug, Default, Setters)]
 struct Popup<'a> {
@@ -99,8 +99,13 @@ impl App {
         if self.current_display_screen == "Snapshot" {
             let snapshot_to_delete = &self.timeshift_instance.devices_map_by_name
                 [&self.current_device_name.clone()][self.current_index];
-            Timeshift::delete_snapshot(&snapshot_to_delete.name).expect("Erreur deleting snapshot");
+            Timeshift::delete_snapshot(&snapshot_to_delete.name).expect("Erreur deleting snapshot"); // I use the type because the function delete_snapshot doesnt take the &mut self, i simply juste refetch
+            self.update_snapshot_list();
         }
+    }
+
+    fn update_snapshot_list(&mut self) {
+        self.timeshift_instance.update();
     }
 
     fn back_or_exit(&mut self) {

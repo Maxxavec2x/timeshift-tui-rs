@@ -4,11 +4,6 @@ use std::fmt;
 use std::process::Command;
 use std::str;
 
-#[derive(Debug)]
-pub enum TimeshiftError {
-    DeleteError,
-}
-
 #[derive(Debug, Default, Clone, Eq, Hash, PartialEq)]
 pub struct Device {
     num: u8,
@@ -93,21 +88,29 @@ pub enum DeviceOrSnapshot {
 
 impl Timeshift {
     pub fn new() -> Self {
+        let (devices_map, devices_map_by_name) = Self::fetch_info();
+        Timeshift {
+            devices_map,
+            devices_map_by_name,
+        }
+    }
+
+    pub fn fetch_info() -> (
+        HashMap<Device, Vec<Snapshot>>,
+        HashMap<String, Vec<Snapshot>>,
+    ) {
         let mut devices_map: HashMap<Device, Vec<Snapshot>> = HashMap::new();
         let mut devices_map_by_name: HashMap<String, Vec<Snapshot>> = HashMap::new();
         let devices: Vec<Device> = Self::get_devices();
         for device in devices {
             devices_map.insert(device.clone(), Self::get_snapshots(device.clone()));
             devices_map_by_name.insert(device.clone().device_name, Self::get_snapshots(device));
-            // Le fait de devoir faire des device.clone parce que je suis un noob avec les lifetime
-            // est cursed, mais je réglerais ça + tard
-            // HAHHAHAHAH C'EST LA GUERRE DES CLONES (vous l'avez ?)
         }
+        (devices_map, devices_map_by_name)
+    }
 
-        Timeshift {
-            devices_map,
-            devices_map_by_name,
-        }
+    pub fn update(&mut self) {
+        (self.devices_map, self.devices_map_by_name) = Self::fetch_info();
     }
 
     pub fn get_snapshots(device: Device) -> Vec<Snapshot> {
@@ -147,7 +150,6 @@ impl Timeshift {
         if result.is_empty() {
             panic!("No devices found");
         }
-        println!("RESULT: {:?}", &result);
         result
     }
 
@@ -166,7 +168,6 @@ impl Timeshift {
         for line in lines_after_separator {
             if t == "Device" {
                 let parts: Vec<&str> = line.split_whitespace().collect();
-                println!("Processing device with parts: {:?}", parts);
                 let num = parts[0].parse::<u8>().expect("Could not parse num");
                 let device_name = parts[2].to_string();
                 let size = parts[3].to_string();
