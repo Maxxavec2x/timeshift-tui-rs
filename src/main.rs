@@ -238,8 +238,8 @@ impl App {
     ) {
         let popup_area = center(
             area,
-            Constraint::Percentage(20),
-            Constraint::Length(3), // top and bottom border + content
+            Constraint::Percentage(30),
+            Constraint::Length(10), // top and bottom border + content
         );
         let snapshot_name =
             &self.timeshift_instance.devices_map_by_name[&current_device_name][self.current_index];
@@ -249,15 +249,13 @@ impl App {
             .title_style(Style::default().fg(Color::Yellow).bold())
             .content(Text::from(vec![
                 Line::from(""),
-                Line::from(vec!["Voulez-vous vraiment supprimer".into()]),
                 Line::from(vec![
-                    "le snapshot ".into(),
+                    "Voulez-vous vraiment supprimer le snapshot :".into(),
                     snapshot_name.to_string().yellow().bold(),
                     " ?".into(),
                 ]),
                 Line::from(""),
                 Line::from("Cette action est irréversible.").style(Style::default().fg(Color::Red)),
-                Line::from(""),
                 Line::from(""),
                 Line::from(vec![
                     " Confirmer ".into(),
@@ -279,9 +277,8 @@ impl Widget for &App {
         let block = Block::bordered()
             .title(title.centered())
             .border_set(border::THICK);
-        //Paragraph::new().block(block).render(area, buf);
-        //self.render_snapshots(area, buf, self.current_device_name.clone());
         block.render(area, buf);
+
         if self.current_display_screen == "Device" {
             self.render_devices(area, buf);
         } else if self.current_display_screen == "Snapshot" {
@@ -290,7 +287,6 @@ impl Widget for &App {
                 self.render_delete_confirmation(area, buf, self.current_device_name.clone());
             }
         }
-        //self.render_snapshots(area, buf, self.current_device_name.clone());
     }
 }
 
