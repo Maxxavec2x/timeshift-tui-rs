@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::fmt;
 use std::process::Command;
@@ -48,19 +48,17 @@ impl fmt::Display for Device {
 pub struct Snapshot {
     num: u8,
 
-    date: NaiveDateTime,
+    pub name: String,
 
     tags: char,
     description: String,
 }
 
 impl Snapshot {
-    pub fn new(num: u8, name: &str, tags: char, description: String) -> Self {
-        let date = NaiveDateTime::parse_from_str(name, "%Y-%m-%d_%H-%M-%S")
-            .expect("Could not parse a date from the name of the snapshot");
+    pub fn new(num: u8, name: String, tags: char, description: String) -> Self {
         Snapshot {
             num,
-            date,
+            name,
             tags,
             description,
         }
@@ -71,18 +69,14 @@ impl fmt::Display for Snapshot {
         write!(
             f,
             "{} | {} | {} | {}",
-            self.num,
-            self.date.format("%Y-%m-%d %H:%M:%S"),
-            self.tags,
-            self.description
+            self.num, self.name, self.tags, self.description
         )
     }
 }
 
 #[derive(Debug, Default)]
 pub struct Timeshift {
-    //I just figured out there can be multiple devices, so now we have an
-    //hashmap with device:snapshot[]
+    //why did i create such a monster
     pub devices_map: HashMap<Device, Vec<Snapshot>>,
     pub devices_map_by_name: HashMap<String, Vec<Snapshot>>,
 }
@@ -94,21 +88,29 @@ pub enum DeviceOrSnapshot {
 
 impl Timeshift {
     pub fn new() -> Self {
+        let (devices_map, devices_map_by_name) = Self::fetch_info();
+        Timeshift {
+            devices_map,
+            devices_map_by_name,
+        }
+    }
+
+    pub fn fetch_info() -> (
+        HashMap<Device, Vec<Snapshot>>,
+        HashMap<String, Vec<Snapshot>>,
+    ) {
         let mut devices_map: HashMap<Device, Vec<Snapshot>> = HashMap::new();
         let mut devices_map_by_name: HashMap<String, Vec<Snapshot>> = HashMap::new();
         let devices: Vec<Device> = Self::get_devices();
         for device in devices {
             devices_map.insert(device.clone(), Self::get_snapshots(device.clone()));
             devices_map_by_name.insert(device.clone().device_name, Self::get_snapshots(device));
-            // Le fait de devoir faire des device.clone parce que je suis un noob avec les lifetime
-            // est cursed, mais je réglerais ça + tard
-            // HAHHAHAHAH C'EST LA GUERRE DES CLONES (vous l'avez ?)
         }
+        (devices_map, devices_map_by_name)
+    }
 
-        Timeshift {
-            devices_map,
-            devices_map_by_name,
-        }
+    pub fn update(&mut self) {
+        (self.devices_map, self.devices_map_by_name) = Self::fetch_info();
     }
 
     pub fn get_snapshots(device: Device) -> Vec<Snapshot> {
@@ -148,7 +150,6 @@ impl Timeshift {
         if result.is_empty() {
             panic!("No devices found");
         }
-        println!("RESULT: {:?}", &result);
         result
     }
 
@@ -167,7 +168,6 @@ impl Timeshift {
         for line in lines_after_separator {
             if t == "Device" {
                 let parts: Vec<&str> = line.split_whitespace().collect();
-                println!("Processing device with parts: {:?}", parts);
                 let num = parts[0].parse::<u8>().expect("Could not parse num");
                 let device_name = parts[2].to_string();
                 let size = parts[3].to_string();
@@ -190,7 +190,7 @@ impl Timeshift {
                     // panic!("Invalid snapshot format");
                 }
                 let num = parts[0].parse::<u8>().expect("Could not parse num");
-                let name = parts[2];
+                let name = String::from(parts[2]);
                 let tags = parts[3].parse::<char>().expect("could not parse Tags");
                 let description = parts[4..].join(" ").to_string();
                 // On récupère tout le
@@ -205,5 +205,26 @@ impl Timeshift {
             }
         }
         result
+    }
+
+    pub fn delete_snapshot(snapshot_name: &str) -> Result<()> {
+        let output = Command::new("sudo")
+            .arg("timeshift")
+            .arg("--delete")
+            .arg("--snapshot")
+            .arg(snapshot_name)
+            .output()
+            .context("Failed to execute timeshift command")?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stdout);
+            anyhow::bail!(
+                "Timeshift delete failed with exit code {:?}: {}",
+                output.status.code(),
+                stderr
+            );
+        }
+
+        Ok(())
     }
 }
