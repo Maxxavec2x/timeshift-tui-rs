@@ -26,17 +26,18 @@ impl App {
             .content(Text::from(vec![
                 Line::from(""),
                 Line::from(vec![
-                    "Voulez-vous vraiment supprimer le snapshot :".into(),
+                    "Do you really want to delete this snapshot :".into(),
                     snapshot_name.to_string().yellow().bold(),
                     " ?".into(),
                 ]),
                 Line::from(""),
-                Line::from("Cette action est irréversible.").style(Style::default().fg(Color::Red)),
+                Line::from("This action cannot be recovered.")
+                    .style(Style::default().fg(Color::Red)),
                 Line::from(""),
                 Line::from(vec![
-                    " Confirmer ".into(),
+                    " Confirm ".into(),
                     " <Y> ".green().bold(),
-                    "  Annuler ".into(),
+                    "  Cancel ".into(),
                     " <N/Esc> ".red().bold(),
                 ]),
             ]))
@@ -50,13 +51,13 @@ impl App {
         let popup_area = center(area, Constraint::Percentage(30), Constraint::Length(8));
 
         let popup = Popup::default()
-            .title("⏳ Suppression en cours")
+            .title("⏳ Deleting... ")
             .title_style(Style::default().fg(Color::Cyan).bold())
             .content(Text::from(vec![
                 Line::from(""),
-                Line::from("Suppression du snapshot...").centered(),
+                Line::from("Deleting the snapshot...").centered(),
                 Line::from(""),
-                Line::from("Veuillez patienter").style(Style::default().fg(Color::Gray)),
+                Line::from("Please wait").style(Style::default().fg(Color::Gray)),
             ]))
             .border_style(Style::default().fg(Color::Cyan))
             .style(Style::default().bg(Color::Black));
