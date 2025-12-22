@@ -24,7 +24,11 @@ impl App {
             KeyCode::Char('k') | KeyCode::Up => self.select_previous(),
             KeyCode::Char('g') | KeyCode::Home => self.select_first(),
             KeyCode::Char('G') | KeyCode::End => self.select_last(),
-            KeyCode::Char('d') | KeyCode::Delete => self.show_delete_confirmation = true,
+            KeyCode::Char('d') | KeyCode::Delete => {
+                if self.current_display_screen == "Snapshot" {
+                    self.show_delete_confirmation = true
+                }
+            }
             KeyCode::Char('y') | KeyCode::Char('Y') => {
                 if self.show_delete_confirmation {
                     self.delete_current_snapshot();
