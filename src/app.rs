@@ -1,13 +1,10 @@
 use crate::timeshift_lib::Timeshift;
+use crate::ui::center;
 use crossterm::event::poll;
 use ratatui::DefaultTerminal;
 use ratatui::Frame;
+use ratatui::layout::Constraint;
 use ratatui::widgets::Clear;
-use std::io;
-use std::thread::JoinHandle;
-use std::time::Duration;
-use throbber_widgets_tui::ThrobberState;
-
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -16,8 +13,13 @@ use ratatui::{
     text::Line,
     widgets::{Block, Widget},
 };
+use std::io;
+use std::thread::JoinHandle;
+use std::time::Duration;
+use throbber_widgets_tui::ThrobberState;
+use tui_input::Input;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct App {
     pub exit: bool,
     pub timeshift_instance: Timeshift,
@@ -28,6 +30,18 @@ pub struct App {
     pub is_deleting: bool,
     pub deletion_thread: Option<JoinHandle<Result<(), String>>>,
     pub throbber_state: ThrobberState,
+
+    pub is_creating: bool,
+    pub input_mode: InputMode,
+    /// Current value of the input box
+    pub input: Input,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum InputMode {
+    #[default]
+    Normal,
+    Editing,
 }
 
 impl App {
@@ -42,6 +56,7 @@ impl App {
             is_deleting: false,
             deletion_thread: None,
             throbber_state: ThrobberState::default(),
+            ..Default::default()
         }
     }
 
@@ -71,6 +86,25 @@ impl App {
     fn draw_frame(&self, frame: &mut Frame) {
         frame.render_widget(Clear, frame.area());
         frame.render_widget(self, frame.area());
+
+        // Im doing this here because i need the frame object to manage the cursor, but i don't
+        // want to refactor all my logic (yet). I should rewrite the App structure and rendering.
+        if self.is_creating {
+            let popup_area = center(
+                frame.area(),
+                Constraint::Percentage(30),
+                Constraint::Length(10),
+            );
+
+            let cursor = {
+                let mut buf = frame.buffer_mut();
+                self.render_creation_popup(popup_area, &mut buf)
+            };
+
+            if let Some(pos) = cursor {
+                frame.set_cursor_position((pos.x, pos.y));
+            }
+        }
     }
 
     pub fn update_snapshot_list(&mut self) {

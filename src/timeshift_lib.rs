@@ -230,4 +230,27 @@ impl Timeshift {
 
         Ok(())
     }
+
+    pub fn create_snapshot(comment: String, snapshot_device: &str) -> Result<()> {
+        let output = Command::new("sudo")
+            .arg("timeshift")
+            .arg("--create")
+            .arg("--comment")
+            .arg(comment)
+            .arg("--snapshot-device")
+            .arg(snapshot_device)
+            .output()
+            .context("Failed to execute timeshift command")?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stdout);
+            anyhow::bail!(
+                "Timeshift delete failed with exit code {:?}: {}",
+                output.status.code(),
+                stderr
+            );
+        }
+
+        Ok(())
+    }
 }
