@@ -230,4 +230,12 @@ impl Timeshift {
 
         Ok(())
     }
+
+    pub fn create_snapshot(comment: String) {
+        if comment.is_empty() {
+            return;
+        }
+        println!("COMMENTAIRE : {}", comment);
+        // TODO: Implémenter la création de snapshot
+    }
 }

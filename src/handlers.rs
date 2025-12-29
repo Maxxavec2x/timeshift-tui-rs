@@ -1,8 +1,10 @@
 use crate::app::App;
+use crate::app::InputMode;
 use crate::timeshift_lib::Timeshift;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use std::io;
 use std::thread;
+use tui_input::backend::crossterm::EventHandler;
 
 impl App {
     pub fn handle_events(&mut self) -> io::Result<()> {
@@ -18,12 +20,24 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
+        // Si on est en mode création, on gère l'input différemment (c'est moche)
+        if self.is_creating {
+            self.handle_creation_key_event(key_event);
+            return;
+        }
+
         match key_event.code {
             KeyCode::Char('q') => self.back_or_exit(),
             KeyCode::Char('j') | KeyCode::Down => self.select_next(),
             KeyCode::Char('k') | KeyCode::Up => self.select_previous(),
             KeyCode::Char('g') | KeyCode::Home => self.select_first(),
             KeyCode::Char('G') | KeyCode::End => self.select_last(),
+            KeyCode::Char('c') => {
+                if self.current_display_screen == "Snapshot" {
+                    self.is_creating = true;
+                    self.input_mode = crate::app::InputMode::Editing;
+                }
+            }
             KeyCode::Char('d') | KeyCode::Delete => {
                 if self.current_display_screen == "Snapshot" {
                     self.show_delete_confirmation = true
@@ -43,10 +57,40 @@ impl App {
         }
     }
 
+    fn handle_creation_key_event(&mut self, key_event: KeyEvent) {
+        match self.input_mode {
+            InputMode::Editing => match key_event.code {
+                KeyCode::Esc => {
+                    self.input_mode = InputMode::Normal;
+                    self.is_creating = false;
+                }
+                KeyCode::Enter => {
+                    Timeshift::create_snapshot(self.input.value_and_reset());
+                    self.is_creating = false;
+                }
+                _ => {
+                    self.input.handle_event(&Event::Key(key_event));
+                }
+            },
+            InputMode::Normal => match key_event.code {
+                KeyCode::Enter => {
+                    Timeshift::create_snapshot(self.input.value_and_reset());
+                    self.is_creating = false;
+                }
+                KeyCode::Esc => {
+                    self.is_creating = false;
+                    self.input.reset();
+                }
+                _ => {}
+            },
+        }
+    }
+
     fn back_or_exit(&mut self) {
         if self.current_display_screen == "Device" {
             self.exit = true;
         } else {
+            self.input_mode = crate::app::InputMode::Normal;
             self.current_display_screen = "Device".to_string();
             self.current_index = 0; // Reset pour les snapshots
         }
