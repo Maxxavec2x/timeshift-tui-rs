@@ -1,5 +1,6 @@
 use crate::app::App;
 use crate::ui::{Popup, center};
+use ratatui::widgets::StatefulWidget;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
@@ -7,7 +8,7 @@ use ratatui::{
     text::{Line, Text},
     widgets::Widget,
 };
-use throbber_widgets_tui::Throbber;
+use throbber_widgets_tui::{BRAILLE_EIGHT, Throbber};
 
 impl App {
     pub fn render_delete_confirmation(
@@ -67,7 +68,15 @@ impl App {
         let throbber_area = center(popup_area, Constraint::Length(3), Constraint::Length(1));
         let throbber = Throbber::default()
             .label("")
+            .throbber_set(BRAILLE_EIGHT)
+            .use_type(throbber_widgets_tui::WhichUse::Spin)
             .style(Style::default().fg(Color::Cyan));
-        throbber.render(throbber_area, buf);
+
+        StatefulWidget::render(
+            throbber,
+            throbber_area,
+            buf,
+            &mut *self.throbber_state.borrow_mut(),
+        );
     }
 }

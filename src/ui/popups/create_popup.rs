@@ -4,6 +4,7 @@ use crate::ui::Popup;
 use crate::ui::center;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::text::Text;
+use ratatui::widgets::StatefulWidget;
 use ratatui::widgets::{Block, Paragraph};
 use ratatui::{
     buffer::Buffer,
@@ -11,6 +12,7 @@ use ratatui::{
     text::{Line, Span},
     widgets::Widget,
 };
+use throbber_widgets_tui::BRAILLE_EIGHT;
 use throbber_widgets_tui::Throbber;
 
 pub struct CursorPosition {
@@ -125,7 +127,15 @@ impl App {
         let throbber_area = center(popup_area, Constraint::Length(3), Constraint::Length(1));
         let throbber = Throbber::default()
             .label("")
+            .throbber_set(BRAILLE_EIGHT)
+            .use_type(throbber_widgets_tui::WhichUse::Spin)
             .style(Style::default().fg(Color::Cyan));
-        throbber.render(throbber_area, buf);
+
+        StatefulWidget::render(
+            throbber,
+            throbber_area,
+            buf,
+            &mut *self.throbber_state.borrow_mut(),
+        );
     }
 }

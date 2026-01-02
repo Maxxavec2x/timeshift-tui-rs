@@ -13,6 +13,7 @@ use ratatui::{
     text::Line,
     widgets::{Block, Widget},
 };
+use std::cell::RefCell;
 use std::io;
 use std::thread::JoinHandle;
 use std::time::Duration;
@@ -29,7 +30,7 @@ pub struct App {
     pub current_display_screen: Screen,
     pub operation_thread: Option<JoinHandle<Result<(), String>>>, // Threat that I use for creation
     // and deletion
-    pub throbber_state: ThrobberState,
+    pub throbber_state: RefCell<ThrobberState>, // TODO : read doc about this
     pub current_action: CurrentAction,
     pub input_mode: InputMode,
     /// Current value of the input box
@@ -73,7 +74,6 @@ impl App {
             current_index: 0,
             current_device_name: String::new(),
             operation_thread: None,
-            throbber_state: ThrobberState::default(),
             ..Default::default()
         }
     }
@@ -107,7 +107,7 @@ impl App {
     fn update(&mut self) {
         match self.current_action {
             CurrentAction::SnapshotCreationPending | CurrentAction::SnapshotDeletion => {
-                self.throbber_state.calc_next();
+                self.throbber_state.borrow_mut().calc_next();
                 self.check_operation_status();
             }
             _ => (),
