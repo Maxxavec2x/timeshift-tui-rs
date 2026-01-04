@@ -1,0 +1,37 @@
+name: Release Rust Binary
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write 
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build release
+        run: cargo build --release --verbose
+
+      - name: Rename binary
+        run: |
+          mkdir dist
+          cp target/release/timeshift-tui-rs dist/timeshift-tui-rs-linux-amd64
+
+      - name: Create GitHub Release and upload binary
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/timeshift-tui-rs-linux-amd64 \
+            --title "${GITHUB_REF_NAME}" \
+            --notes "Release ${GITHUB_REF_NAME}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
